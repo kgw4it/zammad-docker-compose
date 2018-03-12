@@ -26,13 +26,13 @@ LABEL org.label-schema.build-date="$BUILD_DATE" \
       org.label-schema.docker.cmd="sysctl -w vm.max_map_count=262144;docker-compose up"
 
 # install dependencies & gosu
-RUN BUILD_DEPENDENCIES="build-essential ca-certificates curl git libffi-dev libpq5 libpq-dev nginx rsync" \
+RUN BUILD_DEPENDENCIES="build-essential ca-certificates curl git libffi-dev libmysqlclient-dev nginx rsync" \
     set -ex \
 	  && apt-get update && apt-get install -y --force-yes --no-install-recommends ${BUILD_DEPENDENCIES} && rm -rf /var/lib/apt/lists/* \
 	  && curl -s -J -L -o /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture)" \
 	  && curl -s -J -L -o /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/${GOSU_VERSION}/gosu-$(dpkg --print-architecture).asc" \
 	  && export GNUPGHOME="$(mktemp -d)" \
-	  && gpg --keyserver ha.pool.sks-keyservers.net --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+	  && gpg --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
 	  && gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \
 	  && rm -rf "${GNUPGHOME}" /usr/local/bin/gosu.asc \
 	  && chmod +x /usr/local/bin/gosu \
@@ -46,7 +46,7 @@ RUN groupadd -g 1000 ${ZAMMAD_USER} \
     && tar -xzf zammad-${GIT_BRANCH}.tar.gz \
     && rm zammad-${GIT_BRANCH}.tar.gz \
     && cd ${ZAMMAD_TMP_DIR} \
-    && bundle install --without test development mysql \
+    && bundle install --without test development postgres \
     && contrib/packager.io/fetch_locales.rb \
     && sed -e 's#.*adapter: postgresql#  adapter: nulldb#g' -e 's#.*username:.*#  username: postgres#g' -e 's#.*password:.*#  password: \n  host: zammad-postgresql\n#g' < config/database.yml.pkgr > config/database.yml \
     && bundle exec rake assets:precompile \
@@ -54,7 +54,7 @@ RUN groupadd -g 1000 ${ZAMMAD_USER} \
     && chown -R ${ZAMMAD_USER}:${ZAMMAD_USER} ${ZAMMAD_TMP_DIR}
 
 # docker init
-COPY containers/zammad/docker-entrypoint.sh /
+COPY ./docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
