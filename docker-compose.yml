@@ -2,17 +2,9 @@ version: '2'
 
 services:
 
-  zammad-elasticsearch:
-    image: zammad/zammad-docker-compose:zammad-elasticsearch
-    restart: always
-    volumes:
-      - elasticsearch-data:/usr/share/elasticsearch/data
-
   zammad-init:
     command: ["zammad-init"]
     image: ${IMAGE_REPO}:${VERSION}
-    links:
-      - zammad-elasticsearch
     restart: on-failure
     env_file:
       - db.env
@@ -44,7 +36,6 @@ services:
       - zammad-memcached
     image: ${IMAGE_REPO}:${VERSION}
     links:
-      - zammad-elasticsearch
       - zammad-memcached
     restart: always
     volumes:
@@ -57,7 +48,6 @@ services:
       - zammad-railsserver
     image: ${IMAGE_REPO}:${VERSION}
     links:
-      - zammad-elasticsearch
       - zammad-memcached
     restart: always
     volumes:
@@ -76,7 +66,5 @@ services:
       - zammad-data:/opt/zammad
 
 volumes:
-  elasticsearch-data:
-    driver: local
   zammad-data:
     driver: local
